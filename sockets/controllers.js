@@ -1,20 +1,37 @@
+const TicketController = require("../models/tickets")
 
+const Ticket = new TicketController();
 
 const socketController = socket => {
 
-    console.log("usuario conectado")
+    socket.emit('ultimo-ticket', Ticket.ultimo)
 
-    socket.on('disconnect', () => {
-        console.log('Cliente desconectado')
+    socket.on('siguiente-ticket', (payload, callback) => {
+        
+      const siguiente = Ticket.siguiente();
+      callback(siguiente)
     })
 
-    socket.on('enviar-mensaje', (payload, callback) => {
-        
-        
-        const id= 123456
-        console.log(payload, callback)
-        callback( id )
-        socket.broadcast.emit('enviar-mensaje', payload)
+    socket.on("atender-ticket", ({escritorio}, callback) => {
+      if( !escritorio ){
+        return callback({
+          ok: false,
+          msg: "El escritorio es obligatorio"
+        })
+      }
+
+      const ticket = Ticket.atenderTicket(escritorio)
+      if(!ticket){
+        return callback({
+          ok: false,
+          msg: "No quedan tickets pendientes"
+        })
+      } else {
+        return callback({
+          ok: true,
+          ticket
+        })
+      }
     })
 }
 
